@@ -1,48 +1,49 @@
-# auto-green
+# 说明 （部署前请仔细阅读完）
+* 本项目是针对node环境的paas平台和游戏玩具而生，采用Argo隧道部署节点，集成哪吒探针服务。
+* node玩具平台只需上传index.js和package.json即可，paas平台需要docker部署的才上传Dockerfile。
+* 如需是链接github部署，请先删除README.md说明文件，安全起见，已混淆主代码部分。
+* 不填写ARGO_DOMAIN和ARGO_AUTH两个变量即启用临时隧道，反之则使用固定隧道。
+* 若遇到已获取到临时隧道但节点不通，说明域名被墙，重启即可
+* 无需设置NEZHA_TLS,当哪吒端口为{443,8443,2096,2087,2083,2053}其中之一时，自动开启--tls。
+* 右边的Releases中已适配FreeBSD，自行下载，类似的平台Serv00，CT8
 
-[![Build Status](https://github.com/LiangLliu/auto-green/workflows/ci/badge.svg?branch=master)](https://github.com/LiangLliu/auto-green/actions)
+* PaaS 平台设置的环境变量，index.js中的1至12行中设置
+  | 变量名        | 是否必须 | 默认值 | 备注 |
+  | ------------ | ------ | ------ | ------ |
+  | URL          | 否 | https://www.google.com     |项目分配的域名|
+  | PORT         | 否 |  3000  |http服务监听端口，也是订阅端口     |
+  | ARGO_PORT    | 否 |  8080  |argo隧道端口，固定隧道token需和cloudflare后台设置的一致|
+  | UUID         | 否 | 89c13786-25aa-4520-b2e7-12cd60fb5202|UUID|
+  | TIME         | 否 |120     |自动访问间隔时间（默认120秒）单位：秒|
+  | NEZHA_SERVER | 否 |        | 哪吒服务端域名，例如nz.aaa.com    |
+  | NEZHA_PORT   | 否 |  5555  | 哪吒端口为{443,8443,2096,2087,2083,2053}其中之一时，开启tls|
+  | NEZHA_KEY    | 否 |        | 哪吒客务端专用KEY                |
+  | ARGO_DOMAIN  | 否 |        | argo固定隧道域名                 |
+  | ARGO_AUTH    | 否 |        | argo固定隧道json或token          |
+  | CFIP         | 否 |skk.moe | 节点优选域名或ip                 |
+  | CFPORT       | 否 |  443   |节点端口                          |
+  | NAME         | 否 |  ABCD  | 节点名称前缀，例如：Glitch，Replit|
+  | FILE_PATH    | 否 |  temp  | 运行目录,节点存放路径             | 
 
-自动保持 GitHub 提交状态常绿。
+# 节点输出
+* 输出sub.txt节点文件，默认存放路径为temp
+* 订阅：分配的域名/sub;例如https://www.google.com/sub
+* 非标端口订阅(游戏类):分配的域名:端口/sub,前缀不是https，而是http，例如http://www.google.com:1234/sub
 
-> a commit a day keeps your girlfriend away.
+# 其他
+* 本项目已添加自动访问保活功能，仅支持不重启停机的平台，需在第2行中添加项目分配的域名。建议配合外部自动访问保活，保活项目地址：https://github.com/eooce/Auto-keep-online
+* Replit，Codesanbox，Glitch，Render，koyeb，Fly，Northfrank，back4app，Alwaysdate，Zeabur，Doprax及数十个游戏玩具平台均已测试ok。
+* Render及其他比较严格的容器平台，请使用docker image部署，Dockerfile地址：https://github.com/eooce/nodejs-argo-image
 
-## 原理
-
-使用 GitHub Actions 的定时任务功能，每隔一段时间自动执行 `git commit`，提交信息为 "a commit a day keeps your girlfriend away"，灵感来自知乎问题[在 GitHub 上保持 365 天全绿是怎样一种体验？](https://www.zhihu.com/question/34043434/answer/57826281)下某匿名用户的回答：
-
-> 曾经保持了 200 多天全绿，但是冷落了女朋友，一直绿到现在。
-
-## 使用
-
-- 点右上角 **Use this template** 按钮复制本 GitHub 仓库，**:warning: 千万不要 Fork，因为 fork 项目的动态并不会让你变绿 :warning:**
-- 修改 [ci.yml 文件的第 19、20 行](https://github.com/LiangLliu/auto-green/blob/master/.github/workflows/ci.yml#L19) 为自己的 GitHub 账号和昵称
-- (可选) 你可以通过修改 [ci.yml 文件的第 8 行](https://github.com/LiangLliu/auto-green/blob/master/.github/workflows/ci.yml#L8)来调整频率
-
-计划任务语法有 5 个字段，中间用空格分隔，每个字段代表一个时间单位。
-
-```plain
-┌───────────── 分钟 (0 - 59)
-│ ┌───────────── 小时 (0 - 23)
-│ │ ┌───────────── 日 (1 - 31)
-│ │ │ ┌───────────── 月 (1 - 12 或 JAN-DEC)
-│ │ │ │ ┌───────────── 星期 (0 - 6 或 SUN-SAT)
-│ │ │ │ │
-│ │ │ │ │
-│ │ │ │ │
-* * * * *
+# vps一键部署命令
+* 3000端口改为可用的的开放端口,母鸡可忽略,对应哪吒变量也可更改，不需要哪吒可忽略
+* 其他变量可自行添加在哪吒变量后面，参考上方变量表，例如固定隧道等，每个变量之间有一个空格
+* 订阅：ip:端口/sub
 ```
-
-每个时间字段的含义：
-
-|符号   | 描述        | 举例                                        |
-| ----- | -----------| -------------------------------------------|
-| `*`   | 任意值      | `* * * * *` 每天每小时每分钟                  |
-| `,`   | 值分隔符    | `1,3,4,7 * * * *` 每小时的 1 3 4 7 分钟       |
-| `-`   | 范围       | `1-6 * * * *` 每小时的 1-6 分钟               |
-| `/`   | 每         | `*/15 * * * *` 每隔 15 分钟                  |
-
-**注**：由于 GitHub Actions 的限制，如果设置为 `* * * * *` 实际的执行频率为每 5 分执行一次。
-
-## License 
-
-[auto-green](https://github.com/LiangLliu/auto-green) is released under the MIT License. See the bundled [LICENSE](./LICENSE) file for details.
+apt-get update && apt-get install -y curl nodejs npm screen && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && NAME=Vls PORT=3000 NEZHA_SERVER=nz.abcd.cn NEZHA_PORT=5555 NEZHA_KEY=12345678 screen node index.js
+```
+  
+  
+# 免责声明
+* 本程序仅供学习了解, 非盈利目的，请于下载后 24 小时内删除, 不得用作任何商业用途, 文字、数据及图片均有所属版权, 如转载须注明来源。
+* 使用本程序必循遵守部署免责声明，使用本程序必循遵守部署服务器所在地、所在国家和用户所在国家的法律法规, 程序作者不对使用者任何不当行为负责。
